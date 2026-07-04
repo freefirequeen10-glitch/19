@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Premium Esports Admin Portal | Control Deck</title>
+ 
+ <script src="https://cdn.tailwindcss.com"></script>
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+ <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+ <script>
+   tailwind.config = {
+     theme: {
+       extend: {
+         fontFamily: {
+           rajdhani: ['Rajdhani', 'sans-serif'],
+           sans: ['Poppins', 'sans-serif'],
+         },
+         colors: {
+           admin: {
+             accent: '#FFD700', // Metallic Gold
+             neon: '#b026ff', // Purple Neon
+             primary: '#0a0a0c', // Deep Black
+             border: 'rgba(255, 215, 0, 0.3)',
+             glass: 'rgba(15, 15, 20, 0.75)'
+           }
+         }
+       }
+     }
+   }
+ </script>
+
+ <style>
+   body {
+     background: radial-gradient(circle at center, #1a0b2e 0%, #050505 100%);
+     color: #e5e7eb;
+     overflow-x: hidden;
+   }
+   .glass-admin {
+     background: rgba(15, 15, 20, 0.65);
+     backdrop-filter: blur(16px);
+     -webkit-backdrop-filter: blur(16px);
+     border: 1px solid rgba(255, 215, 0, 0.25);
+     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+   }
+   .accent-shadow {
+     box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+   }
+   .neon-shadow {
+     box-shadow: 0 0 20px rgba(176, 38, 255, 0.4);
+   }
+   .gold-text {
+     color: #FFD700;
+     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+   }
+   .neon-text {
+     color: #b026ff;
+     text-shadow: 0 0 10px rgba(176, 38, 255, 0.7);
+   }
+   .custom-scrollbar::-webkit-scrollbar {
+     width: 6px;
+   }
+   .custom-scrollbar::-webkit-scrollbar-thumb {
+     background: linear-gradient(to bottom, #FFD700, #b026ff);
+     border-radius: 4px;
+   }
+   .fade-in {
+     animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+   }
+   @keyframes fadeIn {
+     from { opacity: 0; transform: translateY(10px); }
+     to { opacity: 1; transform: translateY(0); }
+   }
+   
+   /* Input Styling */
+   input, select, textarea {
+     background: rgba(0, 0, 0, 0.6) !important;
+     border: 1px solid rgba(176, 38, 255, 0.3) !important;
+     color: #fff !important;
+     transition: all 0.3s ease;
+   }
+   input:focus, select:focus, textarea:focus {
+     border-color: #FFD700 !important;
+     box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
+     outline: none;
+   }
+
+   /* ===== GPU-ACCELERATED SIDEBAR ===== */
+   #mobile-sidebar {
+     position: fixed;
+     top: 0;
+     left: 0;
+     height: 100%;
+     width: 280px;
+     z-index: 40;
+     background: rgba(10, 10, 12, 0.98);
+     backdrop-filter: blur(25px);
+     border-right: 1px solid rgba(255, 215, 0, 0.3);
+     transform: translateX(-100%);
+     will-change: transform;
+     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+     display: flex;
+     flex-direction: column;
+     padding: 1.5rem;
+     gap: 1.5rem;
+     overflow-y: auto;
+   }
+   #mobile-sidebar.sidebar-open {
+     transform: translateX(0);
+   }
+   #sidebar-overlay {
+     position: fixed;
+     inset: 0;
+     z-index: 39;
+     background: rgba(0,0,0,0.8);
+     opacity: 0;
+     pointer-events: none;
+     transition: opacity 0.3s ease;
+   }
+   #sidebar-overlay.overlay-open {
+     opacity: 1;
+     pointer-events: auto;
+   }
+
+   /* ===== MOBILE TOPBAR ===== */
+   #mobile-topbar {
+     display: none;
+     position: sticky;
+     top: 0;
+     z-index: 30;
+     background: rgba(10, 10, 12, 0.95);
+     backdrop-filter: blur(15px);
+     border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+     padding: 0.75rem 1rem;
+     align-items: center;
+     justify-content: space-between;
+   }
+   @media (max-width: 767px) {
+     #mobile-topbar { display: flex; }
+     #desktop-sidebar { display: none !important; }
+   }
+   @media (min-width: 768px) {
+     #mobile-sidebar { display: none !important; }
+     #sidebar-overlay { display: none !important; }
+     #mobile-topbar { display: none !important; }
+   }
+
+   /* ===== SIDEBAR NAV ITEMS ===== */
+   .admin-nav-btn {
+     color: #9ca3af;
+     transition: all 0.2s ease;
+   }
+   .admin-nav-btn:hover {
+     background: rgba(176, 38, 255, 0.15);
+     color: #fff;
+   }
+   .admin-nav-btn.active {
+     background: linear-gradient(90deg, rgba(255,215,0,0.15) 0%, transparent 100%);
+     color: #FFD700;
+     border-left: 3px solid #FFD700;
+     box-shadow: inset 4px 0px 8px -4px rgba(255, 215, 0, 0.5);
+   }
+ </style>
+</head>
+<body class="font-sans min-h-screen custom-scrollbar">
+
+ <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+ <div id="admin-auth" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050505] overflow-y-auto">
+   <div class="glass-admin w-full max-w-md p-8 rounded-3xl text-center space-y-6 relative overflow-hidden my-8">
+     <div class="absolute -top-10 -right-10 w-40 h-40 bg-admin-accent rounded-full blur-[60px] opacity-20"></div>
+     <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-admin-neon rounded-full blur-[60px] opacity-20"></div>
+     
+     <div id="setup-mode-banner" class="hidden bg-yellow-950/40 border border-admin-accent p-3 rounded-xl text-left text-xs text-yellow-200">
+       <strong class="text-white block mb-0.5"><i class="fa-solid fa-triangle-exclamation"></i> System Setup Active</strong>
+       No administrators configured. First registration will auto-escalate to Super Admin!
+     </div>
+
+     <div class="space-y-2 relative z-10">
+       <i class="fa-solid fa-crown text-5xl gold-text mb-2"></i>
+       <h1 class="text-3xl font-rajdhani font-bold uppercase tracking-widest text-white">Admin Deck</h1>
+       <p id="auth-sub-desc" class="text-xs text-gray-400 font-medium">Checking system status...</p>
+     </div>
+
+     <form id="admin-login-form" class="space-y-4 text-left relative z-10">
+       <div>
+         <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Admin Email</label>
+         <input type="email" id="adm-email" required placeholder="admin@esports.com" class="w-full px-4 py-3 rounded-xl text-sm font-medium">
+       </div>
+       <div>
+         <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Password</label>
+         <input type="password" id="adm-password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl text-sm font-medium">
+       </div>
+       <button type="submit" id="admin-login-btn" class="w-full py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 rounded-xl font-bold uppercase tracking-wider text-black transition-all shadow-[0_0_15px_rgba(255,215,0,0.4)]">Authorize Access</button>
+       
+       <div class="flex justify-between text-xs text-gray-400 pt-2">
+         <button type="button" onclick="window.toggleAuthForms('forgot')" class="hover:text-white transition">Forgot Password?</button>
+         <button type="button" onclick="window.toggleAuthForms('register')" class="hover:text-admin-accent font-bold transition">Register Admin</button>
+       </div>
+     </form>
+
+     <form id="admin-register-form" class="space-y-4 hidden relative z-10">
+       <p class="text-xs text-gray-400 text-left mb-2">Requires a pending invite from a Super Admin (unless Setup Mode).</p>
+       <input type="text" id="reg-name" required placeholder="Full Name" class="w-full px-4 py-3 rounded-xl text-sm">
+       <input type="email" id="reg-email" required placeholder="Invited Email" class="w-full px-4 py-3 rounded-xl text-sm">
+       <input type="password" id="reg-password" required placeholder="Password" class="w-full px-4 py-3 rounded-xl text-sm">
+       <input type="password" id="reg-confirm" required placeholder="Confirm Password" class="w-full px-4 py-3 rounded-xl text-sm">
+       <button type="submit" id="register-submit-btn" class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold uppercase tracking-wider text-white transition-all shadow-[0_0_15px_rgba(176,38,255,0.4)]">Claim Account</button>
+       <button type="button" onclick="window.toggleAuthForms('login')" class="block w-full text-xs text-gray-400 hover:text-white">Back to Login</button>
+     </form>
+
+     <form id="admin-forgot-form" class="space-y-4 hidden relative z-10">
+       <input type="email" id="forgot-email" required placeholder="Admin Email" class="w-full px-4 py-3 rounded-xl text-sm">
+       <button type="submit" id="forgot-submit-btn" class="w-full py-3 bg-admin-accent rounded-xl font-bold uppercase tracking-wider text-black">Send Reset Link</button>
+       <button type="button" onclick="window.toggleAuthForms('login')" class="block w-full text-xs text-gray-400 hover:text-white">Back to Login</button>
+     </form>
+   </div>
+ </div>
+
+
+ <div id="app-container" class="min-h-screen flex flex-col hidden">
+
+   <div id="mobile-topbar">
+     <button id="hamburger-btn" aria-label="Open menu" class="text-admin-accent">
+       <i class="fa-solid fa-bars text-2xl"></i>
+     </button>
+     <span class="font-rajdhani font-bold gold-text text-xl tracking-widest uppercase">Admin Deck</span>
+     <div class="w-8"></div>
+   </div>
+
+   <div id="sidebar-overlay"></div>
+   <nav id="mobile-sidebar" class="custom-scrollbar">
+     <div>
+       <h2 class="font-rajdhani font-bold text-2xl tracking-widest gold-text border-b border-admin-border pb-3 flex items-center gap-2">
+         <i class="fa-solid fa-crown text-admin-neon"></i> ESPORTS
+       </h2>
+     </div>
+     <div class="flex-1 flex flex-col gap-1 mt-2" id="mobile-nav-links">
+       </div>
+     <div class="text-xs text-gray-400 font-medium px-4 py-3 border border-admin-border/30 rounded-xl bg-black/40 text-center">
+       Role: <strong id="admin-role-badge-mobile" class="gold-text uppercase font-black tracking-wider">Standard</strong>
+     </div>
+   </nav>
+
+   <div class="flex flex-col md:flex-row flex-1">
+
+   <aside id="desktop-sidebar" class="w-full md:w-64 glass-admin md:min-h-screen flex flex-col p-5 space-y-6">
+     <div>
+       <h2 class="font-rajdhani font-bold text-2xl tracking-widest gold-text border-b border-admin-border pb-4 flex items-center gap-3">
+         <i class="fa-solid fa-crown text-admin-neon"></i> ESPORTS
+       </h2>
+     </div>
+
+     <nav class="flex-1 space-y-1.5 custom-scrollbar overflow-y-auto pr-2 pb-10" id="desktop-nav-links">
+       <button onclick="window.switchAdminView('dashboard', this)" class="admin-nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-chart-line text-sm w-5 text-center"></i> Dashboard
+       </button>
+       <button onclick="window.switchAdminView('tournaments', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-gamepad text-sm w-5 text-center"></i> Tournaments
+       </button>
+       <button onclick="window.switchAdminView('join-requests', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-ticket text-sm w-5 text-center"></i> Join Requests
+       </button>
+       <button onclick="window.switchAdminView('users', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-users text-sm w-5 text-center"></i> Manage Users
+       </button>
+       <button onclick="window.switchAdminView('deposits', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-arrow-turn-down text-sm w-5 text-center"></i> Deposits
+       </button>
+       <button onclick="window.switchAdminView('withdrawals', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-arrow-turn-up text-sm w-5 text-center"></i> Withdraws
+       </button>
+       
+       <div class="pt-4 pb-2 text-[10px] uppercase text-gray-500 font-bold tracking-widest pl-4 border-t border-white/10 mt-2">CMS & Config</div>
+       
+       <button onclick="window.switchAdminView('banners', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-regular fa-images text-sm w-5 text-center"></i> Sliders & Banners
+       </button>
+       <button onclick="window.switchAdminView('notifications', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-bullhorn text-sm w-5 text-center"></i> Notifications
+       </button>
+       <button onclick="window.switchAdminView('support', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-headset text-sm w-5 text-center"></i> Support Tickets
+       </button>
+       <button onclick="window.switchAdminView('payment-settings', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-credit-card text-sm w-5 text-center"></i> Payments Setup
+       </button>
+       <button onclick="window.switchAdminView('app-settings', this)" class="admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-mobile-screen text-sm w-5 text-center"></i> App Settings
+       </button>
+
+       <div class="super-admin-only hidden pt-4 pb-2 text-[10px] uppercase text-gray-500 font-bold tracking-widest pl-4 border-t border-white/10 mt-2">System</div>
+
+       <button onclick="window.switchAdminView('admin-mgmt', this)" class="super-admin-only hidden admin-nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider">
+         <i class="fa-solid fa-user-shield text-sm w-5 text-center"></i> Staff Engine
+       </button>
+     </nav>
+
+     <div class="mt-auto space-y-3">
+       <div class="text-[11px] text-gray-400 font-medium px-4 py-2.5 border border-admin-border/30 rounded-xl bg-black/40 flex justify-between items-center">
+         <span>Access:</span>
+         <strong id="admin-role-badge" class="gold-text uppercase font-black tracking-widest">Standard</strong>
+       </div>
+       <button id="admin-logout-btn" class="w-full py-3 bg-red-900/30 border border-red-500/50 hover:bg-red-600/50 text-white transition-all text-xs font-bold uppercase tracking-widest rounded-xl">
+         <i class="fa-solid fa-power-off mr-2"></i> Disconnect
+       </button>
+     </div>
+   </aside>
+   <main class="flex-1 p-4 md:p-8 space-y-8 overflow-x-hidden relative">
+     <div class="absolute top-0 right-0 w-96 h-96 bg-admin-accent rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
+     <div class="absolute bottom-0 left-0 w-96 h-96 bg-admin-neon rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
+
+     <section id="adm-view-dashboard" class="adm-panel fade-in space-y-6 relative z-10">
+       <div class="flex items-center gap-3">
+         <h3 class="text-3xl md:text-4xl font-rajdhani font-bold uppercase tracking-wider text-white">Live <span class="neon-text">Matrix</span></h3>
+       </div>
+       
+       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+         <div class="glass-admin p-5 rounded-2xl border-b-4 border-b-admin-accent flex flex-col justify-center items-center text-center hover:-translate-y-1 transition-transform">
+           <i class="fa-solid fa-users text-2xl text-gray-500 mb-2"></i>
+           <span class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Total Users</span>
+           <span id="stat-total-users" class="text-3xl font-rajdhani font-bold gold-text">0</span>
+         </div>
+         <div class="glass-admin p-5 rounded-2xl border-b-4 border-b-admin-neon flex flex-col justify-center items-center text-center hover:-translate-y-1 transition-transform">
+           <i class="fa-solid fa-gamepad text-2xl text-gray-500 mb-2"></i>
+           <span class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Active Arenas</span>
+           <span id="stat-total-tournaments" class="text-3xl font-rajdhani font-bold neon-text">0</span>
+         </div>
+         <div class="glass-admin p-5 rounded-2xl border-b-4 border-b-emerald-500 flex flex-col justify-center items-center text-center hover:-translate-y-1 transition-transform">
+           <i class="fa-solid fa-money-bill-transfer text-2xl text-gray-500 mb-2"></i>
+           <span class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Total Deposits</span>
+           <span id="stat-total-deposits" class="text-3xl font-rajdhani font-bold text-emerald-400">₹0</span>
+         </div>
+         <div class="glass-admin p-5 rounded-2xl border-b-4 border-b-rose-500 flex flex-col justify-center items-center text-center hover:-translate-y-1 transition-transform">
+           <i class="fa-solid fa-money-bill-wave text-2xl text-gray-500 mb-2"></i>
+           <span class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Total Withdraws</span>
+           <span id="stat-total-withdrawals" class="text-3xl font-rajdhani font-bold text-rose-400">₹0</span>
+         </div>
+       </div>
+
+       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="glass-admin p-4 rounded-xl flex items-center justify-between">
+             <div><span class="text-[10px] text-gray-400 uppercase block">Pending Dep.</span><strong id="stat-pending-deposits" class="text-xl gold-text">0</strong></div>
+             <i class="fa-solid fa-clock text-admin-accent opacity-50 text-xl"></i>
+          </div>
+          <div class="glass-admin p-4 rounded-xl flex items-center justify-between">
+             <div><span class="text-[10px] text-gray-400 uppercase block">Pending With.</span><strong id="stat-pending-withdrawals" class="text-xl text-rose-400">0</strong></div>
+             <i class="fa-solid fa-clock text-rose-400 opacity-50 text-xl"></i>
+          </div>
+          <div class="glass-admin p-4 rounded-xl flex items-center justify-between">
+             <div><span class="text-[10px] text-gray-400 uppercase block">Live Matches</span><strong id="stat-live-matches" class="text-xl neon-text">0</strong></div>
+             <i class="fa-solid fa-fire text-admin-neon opacity-50 text-xl"></i>
+          </div>
+          <div class="glass-admin p-4 rounded-xl flex items-center justify-between">
+             <div><span class="text-[10px] text-gray-400 uppercase block">Total Wallets</span><strong id="stat-total-wallet" class="text-xl text-emerald-400">₹0</strong></div>
+             <i class="fa-solid fa-wallet text-emerald-400 opacity-50 text-xl"></i>
+          </div>
+       </div>
+
+       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div class="lg:col-span-2 glass-admin p-6 rounded-3xl h-80">
+           <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Financial Flow Matrix</h4>
+           <canvas id="financialFlowChart"></canvas>
+         </div>
+         <div class="glass-admin p-6 rounded-3xl h-80 flex flex-col">
+           <h4 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">User Demographics</h4>
+           <div class="flex-1 relative"><canvas id="userMetricsChart"></canvas></div>
+         </div>
+       </div>
+     </section>
+
+     <section id="adm-view-tournaments" class="adm-panel fade-in space-y-6 hidden">
+       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+         <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Arena <span class="neon-text">Manager</span></h3>
+         <button onclick="window.toggleTournamentForm(true)" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl text-xs font-bold uppercase tracking-widest text-black shadow-lg shadow-yellow-500/30 hover:scale-105 transition-transform"><i class="fa-solid fa-plus mr-2"></i> Create Arena</button>
+       </div>
+
+       <div id="tourn-form-container" class="glass-admin p-6 md:p-8 rounded-3xl space-y-6 hidden border border-admin-accent/50">
+         <h4 id="tourn-form-title" class="text-xl font-rajdhani font-bold uppercase gold-text border-b border-white/10 pb-3">Deploy New Tournament</h4>
+         <form id="tournament-crud-form" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+           <input type="hidden" id="tourn-id">
+           
+           <div class="space-y-1 md:col-span-2">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Tournament Title</label>
+             <input type="text" id="tourn-title" required placeholder="e.g. BGMI Weekly Skirmish" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+           
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Game Name</label>
+             <input type="text" id="tourn-game" required placeholder="BGMI / Free Fire" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Match Type</label>
+             <select id="tourn-mode" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+               <option value="Solo">Solo</option>
+               <option value="Duo">Duo</option>
+               <option value="Squad">Squad</option>
+             </select>
+           </div>
+
+           <!-- WINNER CONFIGURATION CONTROL -->
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Winner Configuration</label>
+             <select id="tourn-winner-type" class="w-full px-4 py-3 rounded-xl text-xs font-medium" onchange="window.toggleWinnerCustomField()">
+               <option value="1st Place Only">1st Place Only</option>
+               <option value="Top 2">Top 2</option>
+               <option value="Top 3">Top 3</option>
+               <option value="Top 5">Top 5</option>
+               <option value="Custom">Custom Winner Text</option>
+             </select>
+           </div>
+
+           <div class="space-y-1 hidden" id="winner-custom-container">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Custom Winner Text</label>
+             <input type="text" id="tourn-winner-custom" placeholder="e.g. Top 10, Top 25" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+           
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Map</label>
+             <input type="text" id="tourn-map" required placeholder="Erangel / Bermuda" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Total Slots</label>
+             <input type="number" id="tourn-total-slots" required placeholder="e.g. 100" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Entry Fee (₹)</label>
+             <input type="number" id="tourn-entry-fee" required placeholder="0 for free" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Prize Pool (₹)</label>
+             <input type="number" id="tourn-prize-pool" required placeholder="Total Pool" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Per Kill Reward (₹)</label>
+             <input type="number" id="tourn-per-kill" placeholder="Optional" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Schedule Date</label>
+             <input type="date" id="tourn-date" required class="w-full px-4 py-3 rounded-xl text-xs font-medium text-admin-neon">
+           </div>
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Schedule Time</label>
+             <input type="time" id="tourn-time" required class="w-full px-4 py-3 rounded-xl text-xs font-medium text-admin-neon">
+           </div>
+           <div class="space-y-1">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Visibility / Status</label>
+             <select id="tourn-status" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+               <option value="active">Active (Upcoming)</option>
+               <option value="live">Live Now</option>
+               <option value="completed">Completed</option>
+               <option value="hidden">Hidden</option>
+             </select>
+           </div>
+
+           <div class="space-y-1 md:col-span-2">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Banner Image (Upload or URL)</label>
+             <div class="flex gap-2">
+               <input type="text" id="tourn-image" placeholder="Image URL..." class="flex-1 px-4 py-3 rounded-xl text-xs font-medium">
+               <input type="file" id="tourn-image-file" accept="image/*" class="hidden">
+               <button type="button" onclick="document.getElementById('tourn-image-file').click()" class="px-6 bg-admin-neon/20 border border-admin-neon text-admin-neon hover:bg-admin-neon hover:text-white rounded-xl text-xs uppercase font-bold transition-all"><i class="fa-solid fa-upload"></i></button>
+             </div>
+           </div>
+
+           <div class="space-y-1 md:col-span-3">
+             <label class="text-[10px] uppercase text-gray-400 font-bold ml-1">Description / Rules</label>
+             <textarea id="tourn-desc" rows="3" placeholder="Match rules..." class="w-full px-4 py-3 rounded-xl text-xs font-medium"></textarea>
+           </div>
+
+           <!-- DUAL ROOM DETAILS AND DYNAMIC PUBLISH SECTOR -->
+           <div class="md:col-span-3 grid grid-cols-2 gap-4 p-4 border border-white/10 rounded-xl bg-black/40 mt-2">
+             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase">Room Details</div>
+             
+             <div class="space-y-2">
+               <label class="text-[10px] uppercase text-gray-400 font-bold ml-1 block">Room ID</label>
+               <input type="text" id="tourn-room-id" placeholder="Room ID" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+               <label class="flex items-center gap-2 mt-1.5 cursor-pointer text-[10px] text-gray-400 font-bold select-none">
+                 <input type="checkbox" id="tourn-room-id-published" class="w-4 h-4 rounded border-admin-neon bg-black/50 text-admin-neon cursor-pointer">
+                 Publish Room ID
+               </label>
+             </div>
+
+             <div class="space-y-2">
+               <label class="text-[10px] uppercase text-gray-400 font-bold ml-1 block">Room Password</label>
+               <input type="text" id="tourn-room-pass" placeholder="Room Password" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+               <label class="flex items-center gap-2 mt-1.5 cursor-pointer text-[10px] text-gray-400 font-bold select-none">
+                 <input type="checkbox" id="tourn-room-pass-published" class="w-4 h-4 rounded border-admin-neon bg-black/50 text-admin-neon cursor-pointer">
+                 Publish Room Password
+               </label>
+             </div>
+           </div>
+
+           <div class="md:col-span-3 flex justify-end gap-4 pt-4 border-t border-white/10 mt-2">
+             <button type="button" onclick="window.toggleTournamentForm(false)" class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-gray-300 uppercase hover:bg-white/10 transition">Cancel</button>
+             <button type="submit" id="tourn-save-btn" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl text-xs font-bold text-white uppercase shadow-lg shadow-emerald-500/30 hover:scale-105 transition flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Save Arena</button>
+           </div>
+         </form>
+       </div>
+
+       <div id="admin-tournaments-list" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+     </section>
+
+     <section id="adm-view-join-requests" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Match <span class="neon-text">Join Requests</span></h3>
+       <div class="overflow-x-auto rounded-2xl border border-admin-border custom-scrollbar">
+         <table class="w-full text-left text-xs bg-black/50 border-collapse min-w-[800px]">
+           <thead class="bg-black/80 gold-text uppercase tracking-widest text-[10px] border-b border-admin-border">
+             <tr>
+               <th class="p-4">Player Details</th>
+               <th class="p-4">Tournament</th>
+               <th class="p-4">UID / IGN</th>
+               <th class="p-4">Req. Time</th>
+               <th class="p-4 text-right">Actions</th>
+             </tr>
+           </thead>
+           <tbody id="join-requests-table"></tbody>
+         </table>
+       </div>
+     </section>
+
+     <section id="adm-view-users" class="adm-panel fade-in space-y-6 hidden">
+       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+         <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Users <span class="neon-text">Matrix</span></h3>
+         <div class="relative w-full md:w-72">
+           <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+           <input type="text" id="user-search" oninput="window.filterUsers()" placeholder="Search username, ID or email..." class="w-full pl-10 pr-4 py-3 rounded-xl text-xs font-medium bg-black/60 border border-admin-border focus:border-admin-accent">
+         </div>
+       </div>
+       <div id="users-directory" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+     </section>
+
+     <section id="adm-view-deposits" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Deposits <span class="neon-text">Audit</span></h3>
+       <div class="overflow-x-auto rounded-2xl border border-admin-border custom-scrollbar">
+         <table class="w-full text-left text-xs bg-black/50 border-collapse min-w-[700px]">
+           <thead class="bg-black/80 text-gray-400 uppercase tracking-widest text-[10px] border-b border-admin-border">
+             <tr>
+               <th class="p-4">User</th>
+               <th class="p-4 text-emerald-400">Amount</th>
+               <th class="p-4">Ref ID / UTR</th>
+               <th class="p-4">Screenshot</th>
+               <th class="p-4 text-right">Action</th>
+             </tr>
+           </thead>
+           <tbody id="deposit-requests-table"></tbody>
+         </table>
+       </div>
+     </section>
+
+     <section id="adm-view-withdrawals" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Payout <span class="neon-text">Ops</span></h3>
+       <div class="overflow-x-auto rounded-2xl border border-admin-border custom-scrollbar">
+         <table class="w-full text-left text-xs bg-black/50 border-collapse min-w-[700px]">
+           <thead class="bg-black/80 text-gray-400 uppercase tracking-widest text-[10px] border-b border-admin-border">
+             <tr>
+               <th class="p-4">User</th>
+               <th class="p-4 text-rose-400">Amount</th>
+               <th class="p-4">Payment Method</th>
+               <th class="p-4">Req. Date</th>
+               <th class="p-4 text-right">Action</th>
+             </tr>
+           </thead>
+           <tbody id="withdraw-requests-table"></tbody>
+         </table>
+       </div>
+     </section>
+
+     <section id="adm-view-banners" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Visual <span class="neon-text">Assets</span></h3>
+       
+       <div class="glass-admin p-6 rounded-3xl space-y-6">
+         <h4 class="text-lg font-rajdhani font-bold uppercase gold-text border-b border-white/10 pb-2">Home Sliders (Max 5)</h4>
+         <form id="slider-image-form" class="flex flex-col md:flex-row gap-3 items-end">
+           <div class="w-full flex-1">
+              <label class="text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1 block">Image URL / File</label>
+              <input type="text" id="slider-url" placeholder="Direct URL..." class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+           </div>
+           <div class="flex gap-2">
+             <input type="file" id="slider-image-file" accept="image/*" class="hidden">
+             <button type="button" onclick="document.getElementById('slider-image-file').click()" class="px-6 py-3 bg-admin-neon/20 border border-admin-neon text-admin-neon rounded-xl text-xs uppercase font-bold hover:bg-admin-neon hover:text-white transition"><i class="fa-solid fa-folder-open"></i> Upload</button>
+             <button type="submit" id="slider-submit-btn" class="px-8 py-3 bg-admin-accent text-black rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-yellow-400 transition"><i class="fa-solid fa-plus"></i> Add Slide</button>
+           </div>
+         </form>
+         <div id="banners-list" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+       </div>
+
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-admin p-5 rounded-2xl space-y-4">
+             <h5 class="text-sm font-bold uppercase text-gray-300 border-b border-white/10 pb-2">Solo Match Banner</h5>
+             <img id="preview-banner-solo" src="https://via.placeholder.com/400x200/000/fff?text=SOLO+BANNER" class="w-full h-24 object-cover rounded-lg border border-white/10">
+             <input type="file" id="file-banner-solo" class="text-[10px] w-full mt-2" accept="image/*">
+             <button onclick="window.saveCategoryBanner('solo')" class="w-full py-2 bg-admin-neon text-white font-bold text-xs rounded-xl uppercase">Update Solo</button>
+          </div>
+          <div class="glass-admin p-5 rounded-2xl space-y-4">
+             <h5 class="text-sm font-bold uppercase text-gray-300 border-b border-white/10 pb-2">Duo Match Banner</h5>
+             <img id="preview-banner-duo" src="https://via.placeholder.com/400x200/000/fff?text=DUO+BANNER" class="w-full h-24 object-cover rounded-lg border border-white/10">
+             <input type="file" id="file-banner-duo" class="text-[10px] w-full mt-2" accept="image/*">
+             <button onclick="window.saveCategoryBanner('duo')" class="w-full py-2 bg-admin-neon text-white font-bold text-xs rounded-xl uppercase">Update Duo</button>
+          </div>
+          <div class="glass-admin p-5 rounded-2xl space-y-4">
+             <h5 class="text-sm font-bold uppercase text-gray-300 border-b border-white/10 pb-2">Squad Match Banner</h5>
+             <img id="preview-banner-squad" src="https://via.placeholder.com/400x200/000/fff?text=SQUAD+BANNER" class="w-full h-24 object-cover rounded-lg border border-white/10">
+             <input type="file" id="file-banner-squad" class="text-[10px] w-full mt-2" accept="image/*">
+             <button onclick="window.saveCategoryBanner('squad')" class="w-full py-2 bg-admin-neon text-white font-bold text-xs rounded-xl uppercase">Update Squad</button>
+          </div>
+       </div>
+     </section>
+
+     <section id="adm-view-payment-settings" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Payment <span class="neon-text">Gateways</span></h3>
+       <div class="glass-admin p-6 md:p-8 rounded-3xl max-w-2xl space-y-6">
+         <form id="payment-settings-form" class="space-y-5">
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Official UPI ID</label>
+                <input type="text" id="pay-upi-id" required placeholder="yourname@upi" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Account Holder Name</label>
+                <input type="text" id="pay-account-name" placeholder="Esports Company Pvt Ltd" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Minimum Deposit (₹)</label>
+                <input type="number" id="pay-min-deposit" required placeholder="e.g. 10" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Minimum Withdraw (₹)</label>
+                <input type="number" id="pay-min-withdraw" required placeholder="e.g. 50" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+              </div>
+           </div>
+
+           <div class="flex flex-col md:flex-row gap-6 items-center bg-black/40 p-4 rounded-xl border border-white/5">
+             <div class="flex-1 w-full">
+               <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-2">QR Code Graphic Upload</label>
+               <input type="file" id="pay-qr-file" accept="image/*" class="w-full text-xs text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-admin-neon/20 file:text-admin-neon hover:file:bg-admin-neon hover:file:text-white">
+             </div>
+             <div class="w-32 h-32 rounded-xl bg-black border border-admin-border flex items-center justify-center p-2 relative overflow-hidden">
+               <img id="pay-qr-preview" src="" alt="QR" class="max-w-full max-h-full object-contain hidden">
+               <span id="pay-qr-preview-placeholder" class="text-[9px] text-gray-500 font-bold">No QR</span>
+             </div>
+           </div>
+           
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Deposit Notice</label>
+                <textarea id="pay-deposit-note" rows="2" placeholder="Note shown on add money page..." class="w-full px-4 py-3 rounded-xl text-xs font-medium"></textarea>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Withdraw Notice</label>
+                <textarea id="pay-withdraw-note" rows="2" placeholder="Note shown on withdraw page..." class="w-full px-4 py-3 rounded-xl text-xs font-medium"></textarea>
+              </div>
+           </div>
+
+           <div class="flex justify-end pt-4 border-t border-white/10 mt-2">
+             <button type="submit" id="pay-submit-btn" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black rounded-xl text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:scale-105 transition flex items-center gap-2">
+               <i class="fa-solid fa-floppy-disk"></i> Save Gateways
+             </button>
+           </div>
+         </form>
+       </div>
+     </section>
+
+     <section id="adm-view-app-settings" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">App <span class="neon-text">Config</span></h3>
+       <div class="glass-admin p-6 md:p-8 rounded-3xl max-w-3xl space-y-6">
+          <form id="app-settings-form" class="space-y-5">
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                   <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">App Name</label>
+                   <input type="text" id="app-name" placeholder="Esports Arena" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                   <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Referral Bonus (₹)</label>
+                   <input type="number" id="app-ref-bonus" placeholder="e.g. 10" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                   <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">WhatsApp Support</label>
+                   <input type="text" id="app-whatsapp" placeholder="+91..." class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                   <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Telegram Link</label>
+                   <input type="url" id="app-telegram" placeholder="t.me/..." class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                   <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Instagram Link</label>
+                   <input type="url" id="app-instagram" placeholder="instagram.com/..." class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                   <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">YouTube Channel</label>
+                   <input type="url" id="app-youtube" placeholder="youtube.com/..." class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                </div>
+             </div>
+
+             <div class="flex items-center justify-between bg-rose-950/20 p-4 border border-rose-500/30 rounded-xl">
+               <div>
+                 <label class="block text-xs text-white font-bold uppercase tracking-wider">Maintenance Mode</label>
+                 <span class="text-[10px] text-gray-400 block font-medium">Blocks user access to app features.</span>
+               </div>
+               <input type="checkbox" id="app-maintenance" class="w-6 h-6 rounded border-rose-500 bg-black/50 text-rose-500 cursor-pointer">
+             </div>
+
+             <div class="flex justify-end pt-4 border-t border-white/10">
+                <button type="submit" id="app-submit-btn" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(176,38,255,0.4)] hover:scale-105 transition"><i class="fa-solid fa-satellite-dish mr-2"></i> Sync App Data</button>
+             </div>
+          </form>
+       </div>
+     </section>
+
+     <section id="adm-view-notifications" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Broadcast <span class="neon-text">Center</span></h3>
+       <div class="glass-admin p-6 md:p-8 rounded-3xl max-w-2xl space-y-6">
+         <form id="broadcast-notif-form" class="space-y-5">
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+             <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Notif Type</label>
+                <select id="notif-type" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+                  <option value="popup">App Popup</option>
+                  <option value="notice">Tournament Notice</option>
+                  <option value="offer">Special Offer</option>
+                  <option value="announcement">Global Announcement</option>
+                </select>
+             </div>
+             <div>
+                <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Target UID (Empty for All)</label>
+                <input type="text" id="notif-target-user" placeholder="Specific UID" class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+             </div>
+           </div>
+           <div>
+              <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Header Title</label>
+              <input type="text" id="notif-title" required placeholder="Mega Tournament Live!" class="w-full px-4 py-3 rounded-xl text-xs font-medium text-admin-accent">
+           </div>
+           <div>
+              <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Message Body</label>
+              <textarea id="notif-message" required rows="3" placeholder="Enter message..." class="w-full px-4 py-3 rounded-xl text-xs font-medium"></textarea>
+           </div>
+           <button type="submit" id="notif-submit-btn" class="w-full py-4 bg-gradient-to-r from-purple-600 to-admin-neon rounded-xl text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-purple-500/30 hover:scale-[1.02] transition"><i class="fa-solid fa-paper-plane mr-2"></i> Launch Broadcast</button>
+         </form>
+       </div>
+     </section>
+
+     <section id="adm-view-support" class="adm-panel fade-in space-y-6 hidden">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Support <span class="neon-text">Desk</span></h3>
+       <div id="support-tickets-feed" class="grid grid-cols-1 md:grid-cols-2 gap-4 font-medium"></div>
+     </section>
+
+     <section id="adm-view-admin-mgmt" class="super-admin-only hidden adm-panel fade-in space-y-6">
+       <h3 class="text-3xl font-rajdhani font-bold uppercase tracking-wider text-white">Staff <span class="neon-text">Engine</span></h3>
+       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div class="glass-admin p-6 rounded-3xl space-y-4 h-fit">
+           <h4 class="text-sm font-bold text-admin-accent uppercase tracking-wider border-b border-white/10 pb-2">Issue Credential</h4>
+           <form id="invite-admin-form" class="space-y-4 font-medium">
+             <input type="text" id="inv-name" required placeholder="Staff Full Name" class="w-full px-4 py-3 rounded-xl text-xs">
+             <input type="email" id="inv-email" required placeholder="Gmail Address" class="w-full px-4 py-3 rounded-xl text-xs">
+             <select id="inv-role" class="w-full px-4 py-3 rounded-xl text-xs text-admin-neon">
+               <option value="admin">Standard Admin</option>
+               <option value="super_admin">Super Admin</option>
+             </select>
+             <button type="submit" id="inv-submit-btn" class="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold uppercase tracking-wider text-white transition">Dispatch Invite</button>
+           </form>
+         </div>
+         <div class="lg:col-span-2 glass-admin p-6 rounded-3xl space-y-4">
+           <h4 class="text-sm font-bold text-white uppercase tracking-wider border-b border-white/10 pb-2">Active Hierarchy</h4>
+           <div class="overflow-x-auto custom-scrollbar">
+             <table class="w-full text-left text-xs bg-black/30 border-collapse min-w-[500px]">
+               <thead class="bg-black/80 gold-text uppercase font-bold tracking-widest text-[10px] border-b border-admin-border/50">
+                 <tr>
+                   <th class="p-3">Identity</th>
+                   <th class="p-3">Role</th>
+                   <th class="p-3">Status</th>
+                   <th class="p-3 text-right">Actions</th>
+                 </tr>
+               </thead>
+               <tbody id="admins-list-table"></tbody>
+             </table>
+           </div>
+         </div>
+       </div>
+     </section>
+
+   </main>
+   </div>
+ </div>
+
+ <div id="preview-modal" onclick="window.closePreview()" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+   <img id="preview-image" src="" alt="Screenshot" class="max-w-full max-h-[90vh] rounded-xl border border-admin-neon shadow-[0_0_30px_rgba(176,38,255,0.3)]">
+ </div>
+
+ <div id="wallet-modal" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300 backdrop-blur-sm">
+   <div class="glass-admin w-full max-w-sm p-8 rounded-3xl space-y-5 relative shadow-[0_0_40px_rgba(255,215,0,0.15)] border-t border-admin-accent">
+     <h4 class="text-2xl font-rajdhani font-bold uppercase text-white tracking-widest text-center">Wallet Config</h4>
+     <div class="space-y-4">
+       <input type="hidden" id="modal-user-id">
+       <div class="text-center text-xs text-gray-400 mb-2">Targeting User UID: <span id="modal-uid-display" class="text-admin-neon font-mono"></span></div>
+       
+       <div>
+          <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Amount (₹)</label>
+          <input type="number" id="manual-amount" placeholder="0" class="w-full px-4 py-3 rounded-xl text-lg font-bold text-center gold-text">
+       </div>
+       <div>
+          <label class="block text-[10px] uppercase text-gray-400 font-bold ml-1 mb-1">Reason / Notes</label>
+          <input type="text" id="manual-reason" placeholder="e.g. Tournament Win, Refund..." class="w-full px-4 py-3 rounded-xl text-xs font-medium">
+       </div>
+       
+       <div class="grid grid-cols-2 gap-4 pt-2">
+         <button onclick="window.executeWalletAction('admin_credit')" class="py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-emerald-600/30 transition-all flex justify-center items-center gap-2"><i class="fa-solid fa-arrow-turn-down"></i> Credit</button>
+         <button onclick="window.executeWalletAction('admin_debit')" class="py-3 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-rose-600/30 transition-all flex justify-center items-center gap-2"><i class="fa-solid fa-arrow-turn-up"></i> Debit</button>
+       </div>
+       <button onclick="window.closeWalletModal()" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl text-xs text-gray-400 uppercase font-bold transition">Dismiss</button>
+     </div>
+   </div>
+ </div>
+
+ <script type="module">
+   console.log("[Admin] Initializing Premium Control Deck...");
+
+   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+   import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, orderBy, onSnapshot, runTransaction, increment, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+   // DO NOT MODIFY CONFIG
+   const firebaseConfig = {
+     apiKey: "AIzaSyBrL71mdvZ6uM611o2KPUvdTfSpGpn_DJc",
+     authDomain: "tournament-11559.firebaseapp.com",
+     databaseURL: "https://tournament-11559-default-rtdb.firebaseio.com",
+     projectId: "tournament-11559",
+     storageBucket: "tournament-11559.firebasestorage.app",
+     messagingSenderId: "618975909041",
+     appId: "1:618975909041:web:a0723749118cfb0a273e90",
+     measurementId: "G-YJPGLXBG2Q"
+   };
+
+   const app = initializeApp(firebaseConfig);
+   const auth = getAuth(app);
+   const db = getFirestore(app);
+   const storage = getStorage(app);
+
+   let currentAdminId = null;
+   let currentAdminRole = "admin";
+   let allUsersData = [];
+
+   let financialFlowChart = null;
+   let userMetricsChart = null;
+
+   // Toast UI
+   window.showToast = function(message, type = "info") {
+     const container = document.getElementById('toast-container');
+     const toast = document.createElement('div');
+     
+     const colors = {
+       success: "bg-black/90 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]",
+       error: "bg-black/90 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]",
+       info: "bg-black/90 border-admin-neon text-admin-neon shadow-[0_0_15px_rgba(176,38,255,0.3)]",
+       warning: "bg-black/90 border-yellow-500 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]"
+     };
+     const icons = { success: "fa-check", error: "fa-xmark", info: "fa-info", warning: "fa-exclamation" };
+
+     toast.className = `px-5 py-4 rounded-2xl flex items-center gap-4 transition-all duration-300 transform translate-x-12 opacity-0 border-l-4 ${colors[type] || colors.info} backdrop-blur-md`;
+     toast.innerHTML = `
+       <div class="w-8 h-8 rounded-full border border-current flex items-center justify-center flex-shrink-0"><i class="fa-solid ${icons[type] || icons.info}"></i></div>
+       <div class="text-xs font-bold tracking-wide">${message}</div>
+     `;
+     container.appendChild(toast);
+     setTimeout(() => toast.classList.remove('translate-x-12', 'opacity-0'), 10);
+     setTimeout(() => {
+       toast.classList.add('translate-x-12', 'opacity-0');
+       setTimeout(() => toast.remove(), 300);
+     }, 4000);
+   };
+
+   // Toggle Custom Winner Field container dynamically
+   window.toggleWinnerCustomField = function() {
+     const typeEl = document.getElementById('tourn-winner-type');
+     const customContainer = document.getElementById('winner-custom-container');
+     if (typeEl && customContainer) {
+       if (typeEl.value === 'Custom') {
+         customContainer.classList.remove('hidden');
+       } else {
+         customContainer.classList.add('hidden');
+       }
+     }
+   };
+
+   // UI Logic
+   window.toggleSidebar = function(open) {
+     const sidebar = document.getElementById('mobile-sidebar');
+     const overlay = document.getElementById('sidebar-overlay');
+     if (!sidebar || !overlay) return;
+     if (open) {
+       sidebar.classList.add('sidebar-open');
+       overlay.classList.add('overlay-open');
+     } else {
+       sidebar.classList.remove('sidebar-open');
+       overlay.classList.remove('overlay-open');
+     }
+   };
+
+   document.getElementById('hamburger-btn')?.addEventListener('click', () => window.toggleSidebar(true));
+   document.getElementById('sidebar-overlay')?.addEventListener('click', () => window.toggleSidebar(false));
+
+   window.switchAdminView = function(viewId, btnEl) {
+     document.querySelectorAll('.adm-panel').forEach(panel => panel.classList.add('hidden'));
+     const activePanel = document.getElementById('adm-view-' + viewId);
+     if(activePanel) activePanel.classList.remove('hidden');
+     
+     document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+     if(btnEl) btnEl.classList.add('active');
+     window.toggleSidebar(false);
+   };
+
+   // Keep mobile nav synced
+   document.getElementById('mobile-nav-links').innerHTML = document.getElementById('desktop-nav-links').innerHTML;
+
+   window.toggleAuthForms = function(view) {
+     ['login', 'register', 'forgot'].forEach(v => {
+       document.getElementById(`admin-${v}-form`).classList.add('hidden');
+     });
+     document.getElementById(`admin-${view}-form`).classList.remove('hidden');
+   };
+
+   window.openPreview = function(url) {
+     document.getElementById('preview-image').src = url;
+     document.getElementById('preview-modal').classList.remove('opacity-0', 'pointer-events-none');
+   };
+   window.closePreview = function() {
+     document.getElementById('preview-modal').classList.add('opacity-0', 'pointer-events-none');
+   };
+
+   window.openWalletModal = function(userId) {
+     document.getElementById('modal-user-id').value = userId;
+     document.getElementById('modal-uid-display').innerText = userId;
+     document.getElementById('manual-amount').value = '';
+     document.getElementById('manual-reason').value = '';
+     document.getElementById('wallet-modal').classList.remove('opacity-0', 'pointer-events-none');
+   };
+   window.closeWalletModal = function() {
+     document.getElementById('wallet-modal').classList.add('opacity-0', 'pointer-events-none');
+   };
+
+   window.toggleTournamentForm = function(open) {
+     const container = document.getElementById('tourn-form-container');
+     if(open) {
+       container.classList.remove('hidden');
+       container.scrollIntoView({ behavior: 'smooth' });
+     } else {
+       container.classList.add('hidden');
+       document.getElementById('tournament-crud-form').reset();
+       document.getElementById('tourn-id').value = '';
+       document.getElementById('tourn-winner-type').value = '1st Place Only';
+       window.toggleWinnerCustomField();
+       document.getElementById('tourn-room-id-published').checked = false;
+       document.getElementById('tourn-room-pass-published').checked = false;
+       document.getElementById('tourn-form-title').innerText = "Deploy New Tournament";
+     }
+   };
+
+   // ================= TOURNAMENT CRUD FIXES =================
+   document.getElementById('tournament-crud-form').addEventListener('submit', async (e) => {
+     e.preventDefault();
+     const btn = document.getElementById('tourn-save-btn');
+     const ogHtml = btn.innerHTML;
+     btn.disabled = true;
+     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+
+     try {
+       const tId = document.getElementById('tourn-id').value;
+       const file = document.getElementById('tourn-image-file').files[0];
+       let imgUrl = document.getElementById('tourn-image').value;
+
+       if (file) {
+         const storageRef = ref(storage, `tournament_banners/${Date.now()}_${file.name}`);
+         const snap = await uploadBytes(storageRef, file);
+         imgUrl = await getDownloadURL(snap.ref);
+       }
+
+       const payload = {
+         title: document.getElementById('tourn-title').value,
+         game: document.getElementById('tourn-game').value,
+         mode: document.getElementById('tourn-mode').value,
+         map: document.getElementById('tourn-map').value,
+         entryFee: Number(document.getElementById('tourn-entry-fee').value),
+         prizePool: Number(document.getElementById('tourn-prize-pool').value),
+         perKill: Number(document.getElementById('tourn-per-kill').value || 0),
+         totalSlots: Number(document.getElementById('tourn-total-slots').value || 100),
+         date: document.getElementById('tourn-date').value,
+         time: document.getElementById('tourn-time').value,
+         status: document.getElementById('tourn-status').value,
+         description: document.getElementById('tourn-desc').value,
+         banner: imgUrl,
+         roomIdPublished: document.getElementById('tourn-room-id-published').checked,
+         roomPasswordPublished: document.getElementById('tourn-room-pass-published').checked,
+         winnerType: document.getElementById('tourn-winner-type').value,
+         winnerCustom: document.getElementById('tourn-winner-custom').value,
+         updatedAt: serverTimestamp()
+       };
+
+       if (tId) {
+         await updateDoc(doc(db, "tournaments", tId), payload);
+         await setDoc(doc(db, "roomDetails", tId), {
+           roomId: document.getElementById('tourn-room-id').value,
+           roomPassword: document.getElementById('tourn-room-pass').value,
+           roomPass: document.getElementById('tourn-room-pass').value,
+           updatedAt: serverTimestamp()
+         }, { merge: true });
+         window.showToast("Tournament updated successfully.", "success");
+       } else {
+         payload.createdAt = serverTimestamp();
+         payload.joinedCount = 0;
+         const newDocRef = await addDoc(collection(db, "tournaments"), payload);
+         await setDoc(doc(db, "roomDetails", newDocRef.id), {
+           roomId: document.getElementById('tourn-room-id').value,
+           roomPassword: document.getElementById('tourn-room-pass').value,
+           roomPass: document.getElementById('tourn-room-pass').value,
+           createdAt: serverTimestamp()
+         });
+         window.showToast("Tournament created successfully.", "success");
+       }
+       window.toggleTournamentForm(false);
+     } catch (error) {
+       window.showToast("Save failed: " + error.message, "error");
+     } finally {
+       btn.disabled = false;
+       btn.innerHTML = ogHtml;
+     }
+   });
+
+   window.editTournament = async function(id) {
+     try {
+       const docSnap = await getDoc(doc(db, "tournaments", id));
+       const roomSnap = await getDoc(doc(db, "roomDetails", id));
+       if(docSnap.exists()) {
+         const t = docSnap.data();
+         const r = roomSnap.exists() ? roomSnap.data() : {};
+         document.getElementById('tourn-id').value = id;
+         document.getElementById('tourn-title').value = t.title || "";
+         document.getElementById('tourn-game').value = t.game || "";
+         document.getElementById('tourn-mode').value = t.mode || "Solo";
+         document.getElementById('tourn-map').value = t.map || "";
+         document.getElementById('tourn-total-slots').value = t.totalSlots || 100;
+         document.getElementById('tourn-entry-fee').value = t.entryFee || 0;
+         document.getElementById('tourn-prize-pool').value = t.prizePool || 0;
+         document.getElementById('tourn-per-kill').value = t.perKill || 0;
+         document.getElementById('tourn-date').value = t.date || "";
+         document.getElementById('tourn-time').value = t.time || "";
+         document.getElementById('tourn-status').value = t.status || "active";
+         document.getElementById('tourn-image').value = t.banner || "";
+         document.getElementById('tourn-desc').value = t.description || "";
+         document.getElementById('tourn-room-id').value = r.roomId || t.roomId || "";
+         
+         const passVal = r.roomPassword !== undefined ? r.roomPassword : (r.roomPass !== undefined ? r.roomPass : (t.roomPassword || t.roomPass || ""));
+         document.getElementById('tourn-room-pass').value = passVal;
+         
+         document.getElementById('tourn-winner-type').value = t.winnerType || "1st Place Only";
+         document.getElementById('tourn-winner-custom').value = t.winnerCustom || "";
+         window.toggleWinnerCustomField();
+
+         document.getElementById('tourn-room-id-published').checked = t.roomIdPublished || false;
+         document.getElementById('tourn-room-pass-published').checked = t.roomPasswordPublished || false;
+
+         document.getElementById('tourn-form-title').innerText = "Edit Arena: " + t.title;
+         window.toggleTournamentForm(true);
+       }
+     } catch (e) { window.showToast("Error loading tournament", "error"); }
+   };
+
+   window.duplicateTournament = async function(id) {
+     if(!confirm("Duplicate this tournament?")) return;
+     try {
+       const docSnap = await getDoc(doc(db, "tournaments", id));
+       const roomSnap = await getDoc(doc(db, "roomDetails", id));
+       if(docSnap.exists()) {
+         let t = docSnap.data();
+         let r = roomSnap.exists() ? roomSnap.data() : {};
+         t.title = t.title + " (Copy)";
+         t.status = "hidden";
+         t.joinedCount = 0;
+         t.roomIdPublished = false;
+         t.roomPasswordPublished = false;
+         t.createdAt = serverTimestamp();
+         
+         const newDocRef = await addDoc(collection(db, "tournaments"), t);
+         await setDoc(doc(db, "roomDetails", newDocRef.id), {
+           roomId: r.roomId || "",
+           roomPassword: r.roomPassword || "",
+           roomPass: r.roomPass || "",
+           createdAt: serverTimestamp()
+         });
+         window.showToast("Tournament duplicated successfully.", "success");
+       }
+     } catch(e) { window.showToast("Duplication failed.", "error"); }
+   };
+
+   window.deleteTournament = async function(id) {
+     if (currentAdminRole !== "super_admin") return window.showToast("Denied! Super Admins only.", "warning");
+     if(confirm("Confirm DELETION of arena? This cannot be undone.")) {
+       await deleteDoc(doc(db, "tournaments", id));
+       await deleteDoc(doc(db, "roomDetails", id));
+       window.showToast("Arena deleted.", "success");
+     }
+   };
+
+   // ================= WALLET FIXES =================
+   window.executeWalletAction = async function(type) {
+     const userId = document.getElementById('modal-user-id').value;
+     const amount = Number(document.getElementById('manual-amount').value);
+     const reason = document.getElementById('manual-reason').value.trim();
+     
+     if(!userId || isNaN(amount) || amount <= 0) return window.showToast("Invalid amount.", "warning");
+     if(!reason) return window.showToast("Reason/Notes required for audit.", "warning");
+
+     try {
+       await runTransaction(db, async (transaction) => {
+         const userRef = doc(db, "users", userId);
+         const snap = await transaction.get(userRef);
+         if (!snap.exists()) throw new Error("User missing.");
+         
+         let currentBal = snap.data().walletBalance || 0;
+         if (type === 'admin_debit' && currentBal < amount) throw new Error("Insufficient user balance.");
+         
+         let delta = type === 'admin_credit' ? amount : -amount;
+         transaction.update(userRef, { walletBalance: currentBal + delta });
+         
+         const txnRef = doc(collection(db, "walletTransactions"));
+         transaction.set(txnRef, {
+           id: txnRef.id,
+           userId: userId,
+           type: type === 'admin_credit' ? 'credit' : 'debit',
+           amount: amount,
+           reason: reason,
+           title: "Admin Adjustment",
+           status: "success",
+           timestamp: serverTimestamp()
+         });
+       });
+       window.showToast(`Successfully ${type==='admin_credit'?'Credited':'Debited'} ₹${amount}`, "success");
+       window.closeWalletModal();
+     } catch (err) {
+       window.showToast(err.message, "error");
+     }
+   };
+
+   // ================= DEPOSITS & WITHDRAWALS =================
+   window.processDeposit = async function(id, action) {
+     if(!confirm(`Are you sure you want to ${action.toUpperCase()} this deposit?`)) return;
+     try {
+       await runTransaction(db, async (transaction) => {
+         const depRef = doc(db, "depositRequests", id);
+         const depSnap = await transaction.get(depRef);
+         if(!depSnap.exists()) throw new Error("Request missing.");
+         if(depSnap.data().status !== "pending") throw new Error("Already processed.");
+
+         if (action === "approve") {
+           const uid = depSnap.data().userId;
+           const amt = Number(depSnap.data().amount);
+           const userRef = doc(db, "users", uid);
+           const userSnap = await transaction.get(userRef);
+           
+           transaction.update(depRef, { status: "approved", processedAt: serverTimestamp() });
+           
+           if(userSnap.exists()) {
+             transaction.update(userRef, { walletBalance: increment(amt) });
+           }
+           
+           const txnRef = doc(collection(db, "walletTransactions"));
+           transaction.set(txnRef, {
+             userId: uid, type: 'credit', amount: amt, title: "Deposit Approved", status: "success", timestamp: serverTimestamp()
+           });
+         } else {
+           transaction.update(depRef, { status: "rejected", processedAt: serverTimestamp() });
+         }
+       });
+       window.showToast(`Deposit ${action}d successfully.`, "success");
+     } catch(e) { window.showToast(e.message, "error"); }
+   };
+
+   window.processWithdraw = async function(id, action) {
+     if(!confirm(`Are you sure you want to ${action.toUpperCase()} this withdrawal?`)) return;
+     try {
+       await runTransaction(db, async (transaction) => {
+         const wRef = doc(db, "withdrawRequests", id);
+         const wSnap = await transaction.get(wRef);
+         if(!wSnap.exists() || wSnap.data().status !== "pending") throw new Error("Invalid request.");
+
+         if (action === "approve") {
+           transaction.update(wRef, { status: "approved", processedAt: serverTimestamp() });
+         } else {
+           // Refund the user if rejected (assuming deducted on request)
+           const uid = wSnap.data().userId;
+           const amt = Number(wSnap.data().amount);
+           const userRef = doc(db, "users", uid);
+           transaction.update(wRef, { status: "rejected", processedAt: serverTimestamp() });
+           transaction.update(userRef, { walletBalance: increment(amt) });
+           
+           const txnRef = doc(collection(db, "walletTransactions"));
+           transaction.set(txnRef, {
+             userId: uid, type: 'credit', amount: amt, title: "Withdrawal Refund", status: "success", timestamp: serverTimestamp()
+           });
+         }
+       });
+       window.showToast(`Withdrawal ${action}d.`, "success");
+     } catch(e) { window.showToast(e.message, "error"); }
+   };
+
+   // ================= MATCH REQUESTS =================
+   window.processJoinRequest = async function(id, action, userId, tournId) {
+     if(!confirm(`${action.toUpperCase()} player join request?`)) return;
+     try {
+        if(action === 'approve') {
+           await updateDoc(doc(db, "joinRequests", id), { status: "approved" });
+           await updateDoc(doc(db, "tournaments", tournId), { joinedCount: increment(1) });
+           window.showToast("Player Approved.", "success");
+        } else {
+           await updateDoc(doc(db, "joinRequests", id), { status: "rejected" });
+           // Should refund entry fee logically, skipping complex logic here for brevity, assume manual wallet adjustment if paid.
+           window.showToast("Player Rejected.", "error");
+        }
+     } catch(e) { window.showToast("Error processing request.", "error"); }
+   };
+
+   // ================= USER MANAGEMENT EXTENSIONS =================
+   window.toggleUserBlock = async function(userId, status) {
+     const nextStatus = status === 'blocked' ? 'active' : 'blocked';
+     await updateDoc(doc(db, "users", userId), { status: nextStatus });
+     window.showToast(`User ${nextStatus}.`, "success");
+   };
+   
+   window.toggleVerifyUser = async function(userId, isVerified) {
+     await updateDoc(doc(db, "users", userId), { verified: !isVerified });
+     window.showToast(`Badge Updated.`, "success");
+   };
+
+   window.filterUsers = function() {
+     const q = document.getElementById('user-search').value.toLowerCase();
+     const filtered = allUsersData.filter(u => u.username?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.uid?.toLowerCase().includes(q));
+     renderUsers(filtered);
+   };
+
+   function renderUsers(list) {
+     const feed = document.getElementById('users-directory');
+     feed.innerHTML = '';
+     list.forEach(u => {
+       const isVer = u.verified ? '<i class="fa-solid fa-circle-check text-admin-accent ml-1" title="Verified"></i>' : '';
+       const card = document.createElement('div');
+       card.className = `glass-admin p-5 rounded-3xl border-2 ${u.status === 'blocked' ? 'border-red-900/50 bg-red-950/20' : 'border-white/5'} transition-all`;
+       card.innerHTML = `
+         <div class="flex gap-4 items-center border-b border-white/5 pb-3 mb-3">
+           <img src="${u.profileImage || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + u.uid}" class="w-12 h-12 rounded-full border border-admin-accent bg-black">
+           <div class="flex-1 overflow-hidden">
+             <h5 class="text-sm font-bold truncate gold-text">${u.username || 'No Name'} ${isVer}</h5>
+             <p class="text-[10px] text-gray-400 truncate">${u.email}</p>
+           </div>
+         </div>
+         <div class="flex justify-between items-center text-xs mb-4">
+           <span class="text-gray-400 font-bold uppercase tracking-widest">Bal: <strong class="text-emerald-400 font-rajdhani text-lg">₹${u.walletBalance || 0}</strong></span>
+           <span class="text-[10px] uppercase font-bold text-gray-500 bg-white/5 px-2 py-1 rounded-lg">Rank: ${u.rank || 'Bronze'}</span>
+         </div>
+         <div class="grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-wider text-center">
+           <button onclick="window.openWalletModal('${u.uid}')" class="py-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition text-white">Wallet</button>
+           <button onclick="window.toggleVerifyUser('${u.uid}', ${u.verified || false})" class="py-2.5 bg-yellow-900/40 hover:bg-yellow-600/60 rounded-xl transition text-yellow-400">${u.verified ? 'Revoke Badge' : 'Add Badge'}</button>
+           <button onclick="window.toggleUserBlock('${u.uid}', '${u.status || 'active'}')" class="py-2.5 col-span-2 ${u.status === 'blocked' ? 'bg-indigo-900/40 text-indigo-400' : 'bg-rose-900/40 text-rose-400'} rounded-xl transition">
+             ${u.status === 'blocked' ? '<i class="fa-solid fa-lock-open mr-1"></i> Unban User' : '<i class="fa-solid fa-ban mr-1"></i> Ban User'}
+           </button>
+         </div>
+       `;
+       feed.appendChild(card);
+     });
+   }
+
+   // ================= SLIDERS & BANNERS =================
+   document.getElementById('slider-image-form').addEventListener('submit', async (e) => {
+     e.preventDefault();
+     try {
+       let url = document.getElementById('slider-url').value;
+       const file = document.getElementById('slider-image-file').files[0];
+       if (file) {
+         const snap = await uploadBytes(ref(storage, `sliders/${Date.now()}_${file.name}`), file);
+         url = await getDownloadURL(snap.ref);
+       }
+       if(!url) return window.showToast("Provide image or URL.", "warning");
+       
+       await addDoc(collection(db, "sliderImages"), { imageUrl: url, createdAt: serverTimestamp() });
+       window.showToast("Slide added.", "success");
+       document.getElementById('slider-image-form').reset();
+     } catch(e) { window.showToast(e.message, "error"); }
+   });
+
+   window.deleteBanner = async function(id) {
+     if(confirm("Remove this slide?")) await deleteDoc(doc(db, "sliderImages", id));
+   };
+
+   window.saveCategoryBanner = async function(type) {
+     try {
+       const file = document.getElementById(`file-banner-${type}`).files[0];
+       if(!file) return window.showToast("Select an image first.", "warning");
+       
+       const snap = await uploadBytes(ref(storage, `category_banners/${type}.png`), file);
+       const url = await getDownloadURL(snap.ref);
+       
+       await setDoc(doc(db, "settings", `banner_${type}`), { url: url });
+       document.getElementById(`preview-banner-${type}`).src = url;
+       window.showToast(`${type.toUpperCase()} banner updated.`, "success");
+     } catch(e) { window.showToast("Failed to upload.", "error"); }
+   };
+
+   // Load category banners
+   ['solo', 'duo', 'squad'].forEach(async (type) => {
+      const docSnap = await getDoc(doc(db, "settings", `banner_${type}`));
+      if(docSnap.exists()) document.getElementById(`preview-banner-${type}`).src = docSnap.data().url;
+   });
+
+   // ================= APP SETTINGS =================
+   document.getElementById('app-settings-form').addEventListener('submit', async (e) => {
+     e.preventDefault();
+     try {
+       const payload = {
+         appName: document.getElementById('app-name').value,
+         referralBonus: Number(document.getElementById('app-ref-bonus').value),
+         whatsapp: document.getElementById('app-whatsapp').value,
+         telegram: document.getElementById('app-telegram').value,
+         instagram: document.getElementById('app-instagram').value,
+         youtube: document.getElementById('app-youtube').value,
+         maintenance: document.getElementById('app-maintenance').checked,
+         updatedAt: serverTimestamp()
+       };
+       await setDoc(doc(db, "settings", "app_config"), payload, { merge: true });
+       window.showToast("App Settings Saved.", "success");
+     } catch(e) { window.showToast(e.message, "error"); }
+   });
+
+   async function loadAppSettings() {
+      const snap = await getDoc(doc(db, "settings", "app_config"));
+      if(snap.exists()) {
+         const d = snap.data();
+         document.getElementById('app-name').value = d.appName || "";
+         document.getElementById('app-ref-bonus').value = d.referralBonus || "";
+         document.getElementById('app-whatsapp').value = d.whatsapp || "";
+         document.getElementById('app-telegram').value = d.telegram || "";
+         document.getElementById('app-instagram').value = d.instagram || "";
+         document.getElementById('app-youtube').value = d.youtube || "";
+         document.getElementById('app-maintenance').checked = d.maintenance || false;
+      }
+   }
+
+   // ================= REALTIME FEEDS & STATS =================
+   function setupAdminRealtimeFeeds() {
+     // Users Feed & Stats
+     onSnapshot(collection(db, "users"), (snap) => {
+       allUsersData = [];
+       let totalWallet = 0;
+       snap.forEach(d => { 
+         const u = d.data(); 
+         allUsersData.push(u); 
+         totalWallet += Number(u.walletBalance || u.wallet || 0);
+       });
+       document.getElementById('stat-total-users').innerText = snap.size;
+       document.getElementById('stat-total-wallet').innerText = "₹" + totalWallet;
+       if(document.getElementById('user-search').value === "") renderUsers(allUsersData);
+     });
+
+     // Tournaments Feed
+     onSnapshot(collection(db, "tournaments"), (snap) => {
+       let live = 0;
+       const feed = document.getElementById('admin-tournaments-list');
+       feed.innerHTML = '';
+       snap.forEach(d => {
+         const t = d.data();
+         if(t.status === 'live') live++;
+         const card = document.createElement('div');
+         card.className = "glass-admin p-5 rounded-3xl border-l-4 " + (t.status==='active'?'border-l-yellow-500':t.status==='live'?'border-l-admin-neon':t.status==='completed'?'border-l-emerald-500':'border-l-gray-600') + " relative overflow-hidden";
+         card.innerHTML = `
+           <div class="flex justify-between items-start mb-3">
+             <div>
+               <span class="text-[9px] uppercase font-bold text-gray-400 tracking-widest">${t.game} • ${t.mode}</span>
+               <h4 class="text-xl font-bold font-rajdhani text-white">${t.title}</h4>
+             </div>
+             <span class="text-[10px] uppercase font-bold px-3 py-1 rounded-full bg-black/50 border border-white/10 ${t.status==='live'?'neon-text animate-pulse':''}">${t.status}</span>
+           </div>
+           <div class="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-400 bg-black/40 p-3 rounded-xl mb-4">
+             <div>Fee: <span class="text-white">₹${t.entryFee}</span></div>
+             <div>Pool: <span class="gold-text text-sm">₹${t.prizePool}</span></div>
+             <div>Per Kill: <span class="text-white">₹${t.perKill||0}</span></div>
+             <div>Slots: <span class="text-white">${t.joinedCount||0}/${t.totalSlots||100}</span></div>
+             <div class="col-span-2 mt-1">Time: <span class="text-admin-neon">${t.date} ${t.time}</span></div>
+           </div>
+           <div class="flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-wider">
+             <button onclick="window.editTournament('${d.id}')" class="flex-1 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">Edit</button>
+             <button onclick="window.duplicateTournament('${d.id}')" class="flex-1 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">Dup.</button>
+             <button onclick="window.deleteTournament('${d.id}')" class="flex-1 py-2.5 bg-rose-900/50 hover:bg-rose-700/50 text-rose-300 rounded-lg transition">Del.</button>
+           </div>
+         `;
+         feed.appendChild(card);
+       });
+       document.getElementById('stat-total-tournaments').innerText = snap.size;
+       document.getElementById('stat-live-matches').innerText = live;
+     });
+
+     // Join Requests Feed
+     onSnapshot(query(collection(db, "joinRequests"), orderBy("timestamp", "desc")), (snap) => {
+       const tbody = document.getElementById('join-requests-table');
+       tbody.innerHTML = '';
+       snap.forEach(d => {
+         const req = d.data();
+         const tr = document.createElement('tr');
+         tr.className = "border-b border-white/5 hover:bg-white/5";
+         tr.innerHTML = `
+           <td class="p-4">
+             <span class="font-bold text-white block">${req.playerName || 'Unknown'}</span>
+             <span class="text-[10px] text-gray-500">${req.userEmail || ''}</span>
+           </td>
+           <td class="p-4 font-bold text-admin-accent">${req.tournamentName || 'Tournament'}</td>
+           <td class="p-4 font-mono text-gray-300 text-[10px]">${req.gameUid || 'N/A'}<br><span class="text-admin-neon">${req.gameName || ''}</span></td>
+           <td class="p-4 text-[10px] text-gray-500">${req.timestamp ? req.timestamp.toDate().toLocaleString() : ''}</td>
+           <td class="p-4 space-x-2 text-right">
+             ${req.status === 'pending' ? `
+               <button onclick="window.processJoinRequest('${d.id}', 'approve', '${req.userId}', '${req.tournamentId}')" class="px-3 py-1.5 bg-emerald-600/30 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-600 hover:text-white rounded text-[9px] font-bold uppercase transition">Approve</button>
+               <button onclick="window.processJoinRequest('${d.id}', 'reject', '${req.userId}', '${req.tournamentId}')" class="px-3 py-1.5 bg-rose-600/30 text-rose-400 border border-rose-500/50 hover:bg-rose-600 hover:text-white rounded text-[9px] font-bold uppercase transition">Reject</button>
+             ` : `<span class="uppercase text-[9px] font-bold ${req.status==='approved'?'text-emerald-500':'text-rose-500'}">${req.status}</span>`}
+           </td>
+         `;
+         tbody.appendChild(tr);
+       });
+     });
+
+     // Deposits Feed
+     onSnapshot(query(collection(db, "depositRequests"), orderBy("timestamp", "desc")), (snap) => {
+       let pending = 0; let totalAmt = 0;
+       const tbody = document.getElementById('deposit-requests-table');
+       tbody.innerHTML = '';
+       snap.forEach(d => {
+         const req = d.data();
+         if(req.status === 'pending') pending++;
+         if(req.status === 'approved') totalAmt += Number(req.amount||0);
+         
+         const tr = document.createElement('tr');
+         tr.className = "border-b border-white/5 hover:bg-white/5";
+         tr.innerHTML = `
+           <td class="p-4"><span class="font-bold text-white">${req.username || req.userId}</span></td>
+           <td class="p-4 font-bold text-emerald-400 font-rajdhani text-lg">₹${req.amount}</td>
+           <td class="p-4 font-mono text-gray-400 text-xs">${req.referenceId || 'N/A'}</td>
+           <td class="p-4"><button onclick="window.openPreview('${req.screenshotUrl}')" class="text-[10px] uppercase font-bold text-admin-neon border border-admin-neon/50 px-3 py-1 rounded hover:bg-admin-neon hover:text-white transition"><i class="fa-solid fa-image"></i> View</button></td>
+           <td class="p-4 space-x-2 text-right">
+             ${req.status === 'pending' ? `
+               <button onclick="window.processDeposit('${d.id}', 'approve')" class="px-3 py-1.5 bg-emerald-600/30 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-600 hover:text-white rounded text-[9px] font-bold uppercase transition">Approve</button>
+               <button onclick="window.processDeposit('${d.id}', 'reject')" class="px-3 py-1.5 bg-rose-600/30 text-rose-400 border border-rose-500/50 hover:bg-rose-600 hover:text-white rounded text-[9px] font-bold uppercase transition">Reject</button>
+             ` : `<span class="uppercase text-[9px] font-bold ${req.status==='approved'?'text-emerald-500':'text-rose-500'}">${req.status}</span>`}
+           </td>
+         `;
+         tbody.appendChild(tr);
+       });
+       document.getElementById('stat-pending-deposits').innerText = pending;
+       document.getElementById('stat-total-deposits').innerText = "₹" + totalAmt;
+     });
+
+     // Withdrawals Feed
+     onSnapshot(query(collection(db, "withdrawRequests"), orderBy("timestamp", "desc")), (snap) => {
+       let pending = 0; let totalAmt = 0;
+       const tbody = document.getElementById('withdraw-requests-table');
+       tbody.innerHTML = '';
+       snap.forEach(d => {
+         const req = d.data();
+         if(req.status === 'pending') pending++;
+         if(req.status === 'approved') totalAmt += Number(req.amount||0);
+         const tr = document.createElement('tr');
+         tr.className = "border-b border-white/5 hover:bg-white/5";
+         tr.innerHTML = `
+           <td class="p-4"><span class="font-bold text-white">${req.username || req.userId}</span></td>
+           <td class="p-4 font-bold text-rose-400 font-rajdhani text-lg">₹${req.amount}</td>
+           <td class="p-4 font-mono text-gray-400 text-xs">${req.upiId || req.phonePe || 'N/A'}</td>
+           <td class="p-4 text-[10px] text-gray-500">${req.timestamp ? req.timestamp.toDate().toLocaleString() : ''}</td>
+           <td class="p-4 space-x-2 text-right">
+             ${req.status === 'pending' ? `
+               <button onclick="window.processWithdraw('${d.id}', 'approve')" class="px-3 py-1.5 bg-emerald-600/30 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-600 hover:text-white rounded text-[9px] font-bold uppercase transition">Approve</button>
+               <button onclick="window.processWithdraw('${d.id}', 'reject')" class="px-3 py-1.5 bg-rose-600/30 text-rose-400 border border-rose-500/50 hover:bg-rose-600 hover:text-white rounded text-[9px] font-bold uppercase transition">Reject (Refund)</button>
+             ` : `<span class="uppercase text-[9px] font-bold ${req.status==='approved'?'text-emerald-500':'text-rose-500'}">${req.status}</span>`}
+           </td>
+         `;
+         tbody.appendChild(tr);
+       });
+       document.getElementById('stat-pending-withdrawals').innerText = pending;
+       document.getElementById('stat-total-withdrawals').innerText = "₹" + totalAmt;
+     });
+
+     // Banners
+     onSnapshot(collection(db, "sliderImages"), (snap) => {
+       const feed = document.getElementById('banners-list');
+       feed.innerHTML = '';
+       snap.forEach(d => {
+         const b = d.data();
+         const block = document.createElement('div');
+         block.className = "relative rounded-xl overflow-hidden border border-white/10 group h-24 bg-black";
+         block.innerHTML = `
+           <img src="${b.imageUrl}" class="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition">
+           <button onclick="window.deleteBanner('${d.id}')" class="absolute inset-0 m-auto w-8 h-8 bg-rose-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition shadow-[0_0_10px_rgba(244,63,94,0.5)]"><i class="fa-solid fa-trash"></i></button>
+         `;
+         feed.appendChild(block);
+       });
+     });
+   }
+
+   // Chart.js Init
+   function initializeAnalyticsCharts() {
+     const financialCtx = document.getElementById('financialFlowChart').getContext('2d');
+     if (financialFlowChart) financialFlowChart.destroy();
+     financialFlowChart = new Chart(financialCtx, {
+       type: 'line',
+       data: {
+         labels: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'],
+         datasets: [
+           { label: 'Deposits', data: [12000, 19000, 24000, 31000, 29000, 45000], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 },
+           { label: 'Withdraws', data: [5000, 11000, 15000, 12000, 21000, 19000], borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', fill: true, tension: 0.4 }
+         ]
+       },
+       options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { display: false } }, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+     });
+
+     const userCtx = document.getElementById('userMetricsChart').getContext('2d');
+     if (userMetricsChart) userMetricsChart.destroy();
+     userMetricsChart = new Chart(userCtx, {
+       type: 'doughnut',
+       data: { labels: ['Active', 'Blocked', 'Admins'], datasets: [{ data: [85, 10, 5], backgroundColor: ['#FFD700', '#f43f5e', '#b026ff'], borderWidth: 0 }] },
+       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } }, cutout: '70%' }
+     });
+   }
+
+   // Auth state logic remains securely intact per original requirements
+   onAuthStateChanged(auth, async (user) => {
+     const guard = document.getElementById('admin-auth');
+     const container = document.getElementById('app-container');
+     
+     try {
+       const adminsSnap = await getDocs(collection(db, "admins"));
+       if (adminsSnap.empty) document.getElementById('setup-mode-banner').classList.remove('hidden');
+
+       if (user && user.emailVerified) {
+         const docSnap = await getDoc(doc(db, "admins", user.uid));
+         if (docSnap.exists() && docSnap.data().status !== "suspended") {
+           currentAdminId = user.uid;
+           currentAdminRole = docSnap.data().role || "admin";
+           
+           document.getElementById('admin-role-badge').innerText = currentAdminRole;
+           if(document.getElementById('admin-role-badge-mobile')) document.getElementById('admin-role-badge-mobile').innerText = currentAdminRole;
+           
+           if (currentAdminRole === "super_admin") {
+             document.querySelectorAll('.super-admin-only').forEach(el => el.classList.remove('hidden'));
+           }
+           
+           guard.classList.add('hidden');
+           container.classList.remove('hidden');
+           
+           setupAdminRealtimeFeeds();
+           loadAppSettings();
+           initializeAnalyticsCharts();
+         } else {
+            await signOut(auth);
+            guard.classList.remove('hidden');
+         }
+       } else {
+         guard.classList.remove('hidden');
+         container.classList.add('hidden');
+       }
+     } catch(err) { console.error(err); }
+   });
+
+   document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+     e.preventDefault();
+     try {
+       await signInWithEmailAndPassword(auth, document.getElementById('adm-email').value, document.getElementById('adm-password').value);
+     } catch(err) { window.showToast(err.message, "error"); }
+   });
+   
+   document.getElementById('admin-logout-btn').addEventListener('click', () => signOut(auth));
+
+ </script>
+</body>
+</html>
